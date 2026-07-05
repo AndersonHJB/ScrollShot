@@ -18,6 +18,7 @@ swift build -c release
 
 cp "$EXECUTABLE" "$APP/Contents/MacOS/ScrollShot"
 cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
+cp "$ROOT/Resources/ScrollShotAppIcon.icns" "$APP/Contents/Resources/ScrollShotAppIcon.icns"
 
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${GITHUB_RUN_NUMBER:-1}" "$APP/Contents/Info.plist"
