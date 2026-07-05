@@ -38,6 +38,8 @@ Scripts/build_release.sh 0.1.0
 - `ScrollShot-0.1.0.zip`
 - `ScrollShot-0.1.0-checksums.txt`
 
+打开 `.dmg` 后，将 `ScrollShot.app` 拖拽到 `Applications` 即可安装。
+
 当前脚本会在没有 Developer ID 证书时使用 ad-hoc 签名。要发布给更多用户，建议配置 Apple Developer ID 证书并执行公证流程，见 `Scripts/sign_and_notarize.sh`。
 
 ## 使用方式

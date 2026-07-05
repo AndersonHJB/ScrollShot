@@ -7,12 +7,21 @@ DIST="$ROOT/dist"
 APP="$DIST/ScrollShot.app"
 EXECUTABLE="$ROOT/.build/release/ScrollShot"
 DMG="$DIST/ScrollShot-$VERSION.dmg"
+DMG_STAGING=""
 ZIP="$DIST/ScrollShot-$VERSION.zip"
 CHECKSUMS="$DIST/ScrollShot-$VERSION-checksums.txt"
+
+cleanup() {
+  if [[ -n "$DMG_STAGING" ]]; then
+    rm -rf "$DMG_STAGING"
+  fi
+}
+trap cleanup EXIT
 
 cd "$ROOT"
 rm -rf "$DIST"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+DMG_STAGING="$(mktemp -d "${TMPDIR:-/tmp}/scrollshot-dmg.XXXXXX")"
 
 swift build -c release
 
@@ -30,7 +39,9 @@ else
 fi
 
 ditto -c -k --keepParent "$APP" "$ZIP"
-hdiutil create -volname "ScrollShot" -srcfolder "$APP" -ov -format UDZO "$DMG"
+ditto "$APP" "$DMG_STAGING/ScrollShot.app"
+ln -s /Applications "$DMG_STAGING/Applications"
+hdiutil create -volname "ScrollShot" -srcfolder "$DMG_STAGING" -ov -format UDZO "$DMG"
 
 (
   cd "$DIST"
