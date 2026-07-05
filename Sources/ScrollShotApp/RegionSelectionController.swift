@@ -5,7 +5,7 @@ final class RegionSelectionController {
     private var windows: [NSWindow] = []
     private var completion: ((CGRect?) -> Void)?
 
-    func selectRegion(completion: @escaping (CGRect?) -> Void) {
+    func selectRegion(activateApp: Bool = true, completion: @escaping (CGRect?) -> Void) {
         cancel()
         self.completion = completion
 
@@ -35,7 +35,9 @@ final class RegionSelectionController {
             window.makeKeyAndOrderFront(nil)
             windows.append(window)
         }
-        NSApp.activate(ignoringOtherApps: true)
+        if activateApp {
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     func cancel() {

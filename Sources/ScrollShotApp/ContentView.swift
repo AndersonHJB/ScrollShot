@@ -10,12 +10,19 @@ struct ContentView: View {
             header
             permissionPanel
             regionPanel
+            shortcutPanel
             settingsPanel
             actionPanel
             logPanel
         }
         .padding(22)
         .background(Color(nsColor: .windowBackgroundColor))
+        .onReceive(NotificationCenter.default.publisher(for: .scrollShotGlobalHotKey)) { notification in
+            guard let command = notification.userInfo?[GlobalHotKeyCommand.userInfoKey] as? GlobalHotKeyCommand else {
+                return
+            }
+            model.handleGlobalHotKey(command)
+        }
     }
 
     private var header: some View {
@@ -88,6 +95,40 @@ struct ContentView: View {
                 }
                 .keyboardShortcut("r", modifiers: [.command])
             }
+        }
+    }
+
+    private var shortcutPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("全局快捷键")
+                .font(.headline)
+            VStack(spacing: 8) {
+                ForEach(GlobalHotKeyCommand.allCases, id: \.rawValue) { command in
+                    ShortcutEditorRow(
+                        command: command,
+                        hotKey: hotKeyBinding(for: command),
+                        reset: {
+                            model.resetHotKey(for: command)
+                        }
+                    )
+                }
+                HStack {
+                    Spacer()
+                    Button {
+                        model.resetAllHotKeys()
+                    } label: {
+                        Label("恢复默认", systemImage: "arrow.counterclockwise")
+                    }
+                }
+            }
+        }
+    }
+
+    private func hotKeyBinding(for command: GlobalHotKeyCommand) -> Binding<GlobalHotKey> {
+        Binding {
+            model.hotKey(for: command)
+        } set: { hotKey in
+            model.setHotKey(hotKey, for: command)
         }
     }
 
@@ -179,6 +220,62 @@ struct ContentView: View {
             .frame(minHeight: 130)
             .background(Color(nsColor: .textBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+    }
+}
+
+private struct ShortcutEditorRow: View {
+    let command: GlobalHotKeyCommand
+    @Binding var hotKey: GlobalHotKey
+    let reset: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(command.title)
+                .frame(width: 86, alignment: .leading)
+            Text(hotKey.displayShortcut)
+                .font(.system(.body, design: .monospaced))
+                .fontWeight(.semibold)
+                .frame(width: 92, alignment: .leading)
+            ForEach(GlobalHotKey.modifierOptions) { modifier in
+                Toggle(modifier.symbol, isOn: modifierBinding(modifier.flag))
+                    .toggleStyle(.button)
+                    .help(modifier.name)
+            }
+            Picker("按键", selection: keyBinding) {
+                ForEach(GlobalHotKey.keyOptions) { option in
+                    Text(option.label).tag(option.keyCode)
+                }
+            }
+            .labelsHidden()
+            .frame(width: 72)
+            Spacer()
+            Button {
+                reset()
+            } label: {
+                Image(systemName: "arrow.counterclockwise")
+            }
+            .help("恢复默认")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var keyBinding: Binding<UInt32> {
+        Binding {
+            hotKey.keyCode
+        } set: { keyCode in
+            hotKey = hotKey.settingKeyCode(keyCode)
+        }
+    }
+
+    private func modifierBinding(_ modifier: UInt32) -> Binding<Bool> {
+        Binding {
+            hotKey.hasModifier(modifier)
+        } set: { enabled in
+            hotKey = hotKey.settingModifier(modifier, enabled: enabled)
         }
     }
 }
