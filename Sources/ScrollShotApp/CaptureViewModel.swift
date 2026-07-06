@@ -20,7 +20,17 @@ final class CaptureViewModel: ObservableObject {
     @Published var hotKeys = GlobalHotKeyPreferences.hotKeys()
 
     private let selector = RegionSelectionController()
+    private var permissionRefreshTask: Task<Void, Never>?
     private var cancelRequested = false
+
+    init() {
+        refreshPermissions()
+        startPermissionMonitoring()
+    }
+
+    deinit {
+        permissionRefreshTask?.cancel()
+    }
 
     var canStartCapture: Bool {
         selectionRect != nil && !isCapturing && hasScreenRecordingPermission && hasAccessibilityPermission
@@ -32,8 +42,15 @@ final class CaptureViewModel: ObservableObject {
     }
 
     func refreshPermissions() {
-        hasScreenRecordingPermission = PermissionService.hasScreenRecordingPermission
-        hasAccessibilityPermission = PermissionService.hasAccessibilityPermission
+        let currentScreenRecordingPermission = PermissionService.hasScreenRecordingPermission
+        let currentAccessibilityPermission = PermissionService.hasAccessibilityPermission
+
+        if hasScreenRecordingPermission != currentScreenRecordingPermission {
+            hasScreenRecordingPermission = currentScreenRecordingPermission
+        }
+        if hasAccessibilityPermission != currentAccessibilityPermission {
+            hasAccessibilityPermission = currentAccessibilityPermission
+        }
     }
 
     func requestScreenRecordingPermission() {
@@ -221,6 +238,21 @@ final class CaptureViewModel: ObservableObject {
         NSApp.unhide(nil)
         NSApp.activate(ignoringOtherApps: true)
         refreshPermissions()
+    }
+
+    private func startPermissionMonitoring() {
+        permissionRefreshTask?.cancel()
+        permissionRefreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                let didRefresh = await MainActor.run { [weak self] in
+                    guard let self else { return false }
+                    self.refreshPermissions()
+                    return true
+                }
+                guard didRefresh else { return }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
     }
 
     private func appendLog(_ message: String) {

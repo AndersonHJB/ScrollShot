@@ -23,6 +23,9 @@ struct ContentView: View {
             }
             model.handleGlobalHotKey(command)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.refreshPermissions()
+        }
     }
 
     private var header: some View {
