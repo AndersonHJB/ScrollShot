@@ -50,15 +50,16 @@ public final class ImageStitcher {
         }
 
         context.interpolationQuality = .none
-        context.translateBy(x: 0, y: CGFloat(outputHeight))
-        context.scaleBy(x: 1, y: -1)
-        context.draw(base, in: CGRect(x: 0, y: 0, width: base.width, height: base.height))
 
         let cropRect = CGRect(x: 0, y: overlapPixels, width: next.width, height: appendHeight)
+        context.draw(
+            base,
+            in: CGRect(x: 0, y: appendHeight, width: base.width, height: base.height)
+        )
         if let tail = next.cropping(to: cropRect) {
-            context.draw(tail, in: CGRect(x: 0, y: base.height, width: tail.width, height: tail.height))
+            context.draw(tail, in: CGRect(x: 0, y: 0, width: tail.width, height: tail.height))
         } else {
-            context.draw(next, in: CGRect(x: 0, y: base.height, width: next.width, height: next.height))
+            context.draw(next, in: CGRect(x: 0, y: 0, width: next.width, height: next.height))
         }
 
         return context.makeImage() ?? base
