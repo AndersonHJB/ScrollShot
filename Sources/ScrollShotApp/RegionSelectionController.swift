@@ -32,7 +32,8 @@ final class RegionSelectionController {
                 self?.finish(nil)
             }
             window.contentView = view
-            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            window.makeKey()
             windows.append(window)
         }
         if activateApp {
@@ -55,11 +56,11 @@ final class RegionSelectionController {
     }
 }
 
-private final class SelectionWindow: NSWindow {
+private final class SelectionWindow: NSPanel {
     init(screen: NSScreen) {
         super.init(
             contentRect: screen.frame,
-            styleMask: [.borderless],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -67,11 +68,15 @@ private final class SelectionWindow: NSWindow {
         isOpaque = false
         backgroundColor = .clear
         level = .screenSaver
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        hidesOnDeactivate = false
+        hasShadow = false
+        isMovable = false
         ignoresMouseEvents = false
     }
 
     override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
 }
 
 private final class SelectionOverlayView: NSView {
